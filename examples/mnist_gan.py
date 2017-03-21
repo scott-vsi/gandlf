@@ -60,12 +60,14 @@ def build_generator(latent_size, supervised):
     cnn.add(keras.layers.Reshape((7, 7, 128)))
 
     cnn.add(keras.layers.UpSampling2D(size=(2, 2)))
-    cnn.add(keras.layers.Convolution2D(256, 5, 5, border_mode='same',
-                                       activation='relu', init='glorot_normal'))
+    cnn.add(keras.layers.Convolution2D(256, 5, 5, border_mode='same', init='glorot_normal'))
+    cnn.add(keras.layers.BatchNormalization(axis=-1)) # normalize per feature map (channels axis)
+    cnn.add(keras.layers.Activation('relu'))
 
     cnn.add(keras.layers.UpSampling2D(size=(2, 2)))
-    cnn.add(keras.layers.Convolution2D(128, 5, 5, border_mode='same',
-                                       activation='relu', init='glorot_normal'))
+    cnn.add(keras.layers.Convolution2D(128, 5, 5, border_mode='same', init='glorot_normal'))
+    cnn.add(keras.layers.BatchNormalization(axis=-1)) # normalize per feature map (channels axis)
+    cnn.add(keras.layers.Activation('relu'))
 
     cnn.add(keras.layers.Convolution2D(1, 2, 2, border_mode='same',
                                        activation='tanh', init='glorot_normal'))
