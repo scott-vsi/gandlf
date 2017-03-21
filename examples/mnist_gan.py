@@ -193,6 +193,65 @@ def build_discriminator_lite(supervised):
         return keras.models.Model(input=image, output=fake)
 
 
+def load_data(nb_images=None, nb_images_per_label=None, is_pan=False, im_size=56):
+    # nb_images : number of images to load
+    # nb_images_per_label : number of images per label to load
+    # if nb_images is set and nb_images_per_label is None, images are drawn
+    # from categories in proportion to their frequency in the dataset.
+    # if nb_images_per_label is set and nb_images is None, the categories
+    # are re-ballanced
+    # is_pan : data conforms to the mnist data shape
+
+    import os, os.path as path
+    from glob import glob
+    import scipy.misc as misc
+    import itertools as it
+
+    #import sklearn.preprocessing
+    #files = glob('/like_mnist@2x/*/*.JPEG')
+    #labels = sklearn.preprocessing.LabelEncoder().fit_transform(
+    #    [path.split(path.split(f)[0])[1] for f in files])
+    #images = [misc.imread(f) for f in files] # silently requires Pillow...
+
+    filenames = []
+    for root, dirs, files in os.walk('/data/by_yaw'):
+        if dirs != []: continue # HACKY use walkdir
+        files = [path.join(root, f) for f in files if '.JPEG' in f]
+        files = np.random.permutation(files)
+        filenames.append(files[:nb_images_per_label])
+
+    labels = list(it.chain.from_iterable([[i]*len(lst) for i,lst in enumerate(filenames)]))
+    filenames = list(it.chain.from_iterable(filenames))
+
+    inds = np.random.permutation(len(filenames))[:nb_images]
+    filenames, labels = [filenames[i] for i in inds], [labels[i] for i in inds]
+
+    # silently requires Pillow...
+    images = [misc.imread(f, mode='P' if is_pan else 'RGB') for f in filenames]
+    images = [misc.imresize(im, size=(im_size,im_size), interp='bicubic') for im in images]
+
+    # requires numpy > 1.10
+    nb_train = int(0.9*len(filenames))
+    X_train, y_train = np.stack(images[:nb_train]), labels[:nb_train]
+    X_test, y_test = np.stack(images[nb_train:]), labels[nb_train:]
+
+    def make_band_interleaved(pixel_interleaved_image):
+        # nimages, nrows, ncols, nchannels
+        return np.transpose(pixel_interleaved_image, (0,3,1,2))
+    #if not is_pan: X_train, X_test = map(make_band_interleaved, [X_train, X_test])
+
+    X_train = (X_train.astype(np.float32) - 127.5) / 127.5
+    if is_pan: X_train = np.expand_dims(X_train, axis=-1)
+
+    X_test = (X_test.astype(np.float32) - 127.5) / 127.5
+    if is_pan: X_test = np.expand_dims(X_test, axis=-1)
+
+    y_train = np.expand_dims(y_train, axis=-1)
+    y_test = np.expand_dims(y_test, axis=-1)
+
+    return (X_train, y_train), (X_test, y_test)
+
+
 def get_mnist_data(binarize=False):
     """Puts the MNIST data in the right format."""
 
@@ -313,7 +372,8 @@ if __name__ == '__main__':
                          'got %s.' % args.latent_type)
 
     # Gets training and testing data.
-    (X_train, y_train), (_, _) = get_mnist_data(args.binarize)
+    #(X_train, y_train), (_, _) = get_mnist_data(args.binarize)
+    (X_train, y_train), (_, _) = load_data(is_pan=True, nb_images_per_label=10000, im_size=28)
 
     # Turns digit labels into one-hot encoded labels.
     y_train_ohe = np.eye(10)[np.squeeze(y_train)]
