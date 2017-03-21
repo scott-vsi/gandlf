@@ -105,16 +105,19 @@ def build_discriminator(supervised):
 
     cnn.add(keras.layers.Convolution2D(64, 3, 3, border_mode='same',
                                        subsample=(1, 1)))
+    cnn.add(keras.layers.BatchNormalization(axis=-1)) # normalize per feature map (channels axis)
     cnn.add(keras.layers.LeakyReLU())
     cnn.add(keras.layers.Dropout(0.3))
 
     cnn.add(keras.layers.Convolution2D(128, 3, 3, border_mode='same',
                                        subsample=(2, 2)))
+    cnn.add(keras.layers.BatchNormalization(axis=-1)) # normalize per feature map (channels axis)
     cnn.add(keras.layers.LeakyReLU())
     cnn.add(keras.layers.Dropout(0.3))
 
     cnn.add(keras.layers.Convolution2D(256, 3, 3, border_mode='same',
                                        subsample=(1, 1)))
+    cnn.add(keras.layers.BatchNormalization(axis=-1)) # normalize per feature map (channels axis)
     cnn.add(keras.layers.LeakyReLU())
     cnn.add(keras.layers.Dropout(0.3))
 
