@@ -301,10 +301,11 @@ if __name__ == '__main__':
 
     if args.plot:
         try:
-            import matplotlib.pyplot as plt
+            import scipy.misc, os
+            from PIL import Image
         except ImportError:
             raise ImportError('To plot samples from the generator, you must '
-                              'install Matplotlib (not found in path).')
+                              'install scipy and Pillow (not found in path).')
 
     latent_type = args.latent_type.lower()
     if latent_type not in ['normal', 'uniform']:
@@ -322,19 +323,20 @@ if __name__ == '__main__':
     if args.plot:
         if args.unsupervised:
             samples = model.sample([latent_type], num_samples=args.plot)
-            for sample in samples:
-                plt.figure()
-                plt.imshow(-sample.reshape((28, 28)), cmap='gray')
-                plt.axis('off')
+            for i, sample in enumerate(samples):
+                outfile = 'samples{}.png'.format(i)
+                # otherwise saves 16-bit png
+                sample = (sample.squeeze() * 127.5 + 127.5).astype(np.ubyte)
+                scipy.misc.imsave(outfile, sample)
         else:
             labels = y_train[:args.plot]
             samples = model.sample([latent_type, labels])
-            for sample, digit in zip(samples, labels):
-                plt.figure()
-                plt.imshow(-sample.reshape((28, 28)), cmap='gray')
-                plt.axis('off')
+            for i, (sample, digit) in enumerate(zip(samples, labels)):
+                outfile = 'samples{}_{}.png'.format(i, digit)
+                # otherwise saves 16-bit png
+                sample = (sample.squeeze()* 127.5 + 127.5).astype(np.ubyte)
+                scipy.misc.imsave(outfile, sample)
                 print('Digit: %d' % digit)
-        plt.show()
 
     model.save(args.save_path)
     print('Saved model:', args.save_path)
