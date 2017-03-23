@@ -385,8 +385,8 @@ if __name__ == '__main__':
                          'got %s.' % args.latent_type)
 
     # Gets training and testing data.
-    #(X_train, y_train), (_, _) = get_mnist_data(args.binarize)
-    (X_train, y_train), (_, _) = load_data(is_pan=True, nb_images_per_label=10000, im_size=28)
+    (X_train, y_train), (_, _) = get_mnist_data(args.binarize)
+    #(X_train, y_train), (_, _) = load_data(is_pan=True, nb_images_per_label=10000, im_size=28)
 
     # Turns digit labels into one-hot encoded labels.
     y_train_ohe = np.eye(10)[np.squeeze(y_train)]
