@@ -50,14 +50,18 @@ np.random.seed(1337)
 keras.backend.set_image_dim_ordering('tf')
 
 
-def build_generator(latent_size, supervised):
+def build_generator(latent_size, supervised, is_pan=False, im_size=28):
     """Builds the big generator model."""
+
+    nb_channels = 1 if is_pan else 3
+    upsampling_factor = 4 # 2**number of UpSamplings
+    lowrez = im_size // upsampling_factor
 
     cnn = keras.models.Sequential()
 
     cnn.add(keras.layers.Dense(1024, input_dim=latent_size, activation='relu'))
-    cnn.add(keras.layers.Dense(128 * 7 * 7, activation='relu'))
-    cnn.add(keras.layers.Reshape((7, 7, 128)))
+    cnn.add(keras.layers.Dense(128 * lowrez * lowrez, activation='relu'))
+    cnn.add(keras.layers.Reshape((lowrez, lowrez, 128)))
 
     cnn.add(keras.layers.UpSampling2D(size=(2, 2)))
     cnn.add(keras.layers.Convolution2D(256, 5, 5, border_mode='same', init='glorot_normal'))
@@ -69,7 +73,7 @@ def build_generator(latent_size, supervised):
     cnn.add(keras.layers.BatchNormalization(axis=-1)) # normalize per feature map (channels axis)
     cnn.add(keras.layers.Activation('relu'))
 
-    cnn.add(keras.layers.Convolution2D(1, 2, 2, border_mode='same',
+    cnn.add(keras.layers.Convolution2D(nb_channels, 2, 2, border_mode='same',
                                        activation='tanh', init='glorot_normal'))
 
     latent = keras.layers.Input(shape=(latent_size,), name='latent')
@@ -92,14 +96,18 @@ def build_generator(latent_size, supervised):
                                   name='generator')
 
 
-def build_discriminator(supervised):
+def build_discriminator(supervised, is_pan=False, im_size=28, nb_kernels=32):
     """Builds the big discriminator model."""
+
+    nb_channels = 1 if is_pan else 3
 
     cnn = keras.models.Sequential()
 
+    #cnn.add(GaussianNoise(0.12, input_shape=(im_size, im_size, nb_channels)))
+
     cnn.add(keras.layers.Convolution2D(32, 3, 3, border_mode='same',
                                        subsample=(2, 2),
-                                       input_shape=(28, 28, 1)))
+                                       input_shape=(im_size, im_size, nb_channels)))
     cnn.add(keras.layers.LeakyReLU())
     cnn.add(keras.layers.Dropout(0.3))
 
@@ -123,7 +131,7 @@ def build_discriminator(supervised):
 
     cnn.add(keras.layers.Flatten())
 
-    image = keras.layers.Input(shape=(28, 28, 1), name='real_data')
+    image = keras.layers.Input(shape=(im_size, im_size, nb_channels), name='real_data')
 
     features = cnn(image)
 
@@ -286,7 +294,7 @@ def get_mnist_data(binarize=False):
     return (X_train, y_train), (X_test, y_test)
 
 
-def train_model(args, X_train, y_train, y_train_ohe):
+def train_model(args, X_train, y_train, y_train_ohe, is_pan=False, im_size=28):
     """This is the core part where the model is trained."""
 
     adam_optimizer = keras.optimizers.Adam(lr=args.lr, beta_1=args.beta)
@@ -297,8 +305,8 @@ def train_model(args, X_train, y_train, y_train_ohe):
         generator = build_generator_lite(args.nb_latent, supervised)
         discriminator = build_discriminator_lite(supervised)
     else:
-        generator = build_generator(args.nb_latent, supervised)
-        discriminator = build_discriminator(supervised)
+        generator = build_generator(args.nb_latent, supervised, is_pan=is_pan, im_size=im_size)
+        discriminator = build_discriminator(supervised, is_pan=is_pan, im_size=im_size)
 
     model = gandlf.Model(generator, discriminator)
 
@@ -368,6 +376,7 @@ if __name__ == '__main__':
     optimizer_params.add_argument('--beta', type=float, default=0.5,
                                   metavar='FLOAT',
                                   help='beta 1 for Adam optimizer')
+    is_pan = True; im_size = 28
 
     args = parser.parse_args()
 
@@ -386,12 +395,12 @@ if __name__ == '__main__':
 
     # Gets training and testing data.
     (X_train, y_train), (_, _) = get_mnist_data(args.binarize)
-    #(X_train, y_train), (_, _) = load_data(is_pan=True, nb_images_per_label=10000, im_size=28)
+    #(X_train, y_train), (_, _) = load_data(is_pan=is_pan, nb_images_per_label=10000, im_size=im_size)
 
     # Turns digit labels into one-hot encoded labels.
     y_train_ohe = np.eye(10)[np.squeeze(y_train)]
 
-    model = train_model(args, X_train, y_train, y_train_ohe)
+    model = train_model(args, X_train, y_train, y_train_ohe, is_pan=is_pan, im_size=im_size)
 
     if args.plot:
         if args.unsupervised:
