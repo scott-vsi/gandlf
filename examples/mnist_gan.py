@@ -358,7 +358,7 @@ if __name__ == '__main__':
                                  action='store_true',
                                  help='if set, make mnist data binary')
     training_params.add_argument('--im_size', type=int, default=28,
-                                 metavar='INT'
+                                 metavar='INT',
                                  help='image size to process; resize if necessary')
 
 
@@ -403,31 +403,35 @@ if __name__ == '__main__':
                          'got %s.' % args.latent_type)
 
     # Gets training and testing data.
-    #(X_train, y_train), (_, _) = get_mnist_data(args.binarize, im_size=im_size)
-    (X_train, y_train), (_, _) = load_data(is_pan=is_pan, nb_images_per_label=10000, im_size=im_size)
+    #(X_train, y_train), (_, _) = get_mnist_data(args.binarize, im_size=args.im_size)
+    (X_train, y_train), (_, _) = load_data(nb_images_per_label=10000, is_pan=is_pan, im_size=args.im_size)
 
     # Turns digit labels into one-hot encoded labels.
     y_train_ohe = np.eye(10)[np.squeeze(y_train)]
 
-    model = train_model(args, X_train, y_train, y_train_ohe, is_pan=is_pan, im_size=im_size)
+    model = train_model(args, X_train, y_train, y_train_ohe, is_pan=is_pan, im_size=args.im_size)
+    #model = gandlf.models.load_model('/tmp/mnist_gan.keras_model')
 
     if args.plot:
-        if args.unsupervised:
-            samples = model.sample([latent_type], num_samples=args.plot)
-            for i, sample in enumerate(samples):
-                outfile = 'samples{}.png'.format(i)
-                # otherwise saves 16-bit png
-                sample = (sample.squeeze() * 127.5 + 127.5).astype(np.ubyte)
-                scipy.misc.imsave(outfile, sample)
-        else:
-            labels = y_train[:args.plot]
-            samples = model.sample([latent_type, labels])
-            for i, (sample, digit) in enumerate(zip(samples, labels)):
-                outfile = 'samples{}_{}.png'.format(i, digit)
-                # otherwise saves 16-bit png
-                sample = (sample.squeeze()* 127.5 + 127.5).astype(np.ubyte)
-                scipy.misc.imsave(outfile, sample)
-                print('Digit: %d' % digit)
+        def make_grid(tensor, ncols=10):
+            nb_images = tensor.shape[0]
+            tensor = np.pad(tensor, pad_width=[(0,np.mod(nb_images, ncols))]+[(0,0)]*3,
+                    mode='constant', constant_values=0)
+            def make_col(tensor):
+                return np.vstack([im for im in tensor])
+            def make_cols(tensor, ncols):
+                return [make_col(r) for r in np.split(tensor, ncols)]
+            return np.squeeze(np.hstack(make_cols(tensor, ncols)))
+
+        for i in range(args.plot):
+            if args.unsupervised:
+                samples = model.sample([latent_type], num_samples=10*10)
+            else:
+                labels = np.expand_dims(range(10)*10, axis=1)
+                samples = model.sample([latent_type, labels])
+            # arrange them into a grid
+            im_grid = make_grid((samples * 127.5 + 127.5).astype(np.ubyte))
+            scipy.misc.imsave('samples{}.png'.format(i), im_grid)
 
     model.save(args.save_path)
     print('Saved model:', args.save_path)
