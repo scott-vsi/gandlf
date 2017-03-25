@@ -273,10 +273,15 @@ def load_data(nb_images=None, nb_images_per_label=None, is_pan=False, im_size=56
     return (X_train, y_train), (X_test, y_test)
 
 
-def get_mnist_data(binarize=False):
+def get_mnist_data(binarize=False, im_size=28):
     """Puts the MNIST data in the right format."""
 
+    import scipy.misc as misc
+
     (X_train, y_train), (X_test, y_test) = mnist.load_data()
+
+    X_train = np.stack([misc.imresize(im, size=(im_size,im_size), interp='bicubic') for im in X_train])
+    X_test = np.stack([misc.imresize(im, size=(im_size,im_size), interp='bicubic') for im in X_test])
 
     if binarize:
         X_test = np.where(X_test >= 10, 1, -1)
@@ -394,7 +399,7 @@ if __name__ == '__main__':
                          'got %s.' % args.latent_type)
 
     # Gets training and testing data.
-    (X_train, y_train), (_, _) = get_mnist_data(args.binarize)
+    (X_train, y_train), (_, _) = get_mnist_data(args.binarize, im_size=im_size)
     #(X_train, y_train), (_, _) = load_data(is_pan=is_pan, nb_images_per_label=10000, im_size=im_size)
 
     # Turns digit labels into one-hot encoded labels.
