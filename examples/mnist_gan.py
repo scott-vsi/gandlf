@@ -357,6 +357,10 @@ if __name__ == '__main__':
     training_params.add_argument('--binarize', default=False,
                                  action='store_true',
                                  help='if set, make mnist data binary')
+    training_params.add_argument('--im_size', type=int, default=28,
+                                 metavar='INT'
+                                 help='image size to process; resize if necessary')
+
 
     model_params = parser.add_argument_group('model params')
     model_params.add_argument('--nb_latent', type=int, default=100,
@@ -381,7 +385,7 @@ if __name__ == '__main__':
     optimizer_params.add_argument('--beta', type=float, default=0.5,
                                   metavar='FLOAT',
                                   help='beta 1 for Adam optimizer')
-    is_pan = False; im_size = 56
+    is_pan = False
 
     args = parser.parse_args()
 
