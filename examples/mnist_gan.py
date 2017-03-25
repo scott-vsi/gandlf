@@ -381,7 +381,7 @@ if __name__ == '__main__':
     optimizer_params.add_argument('--beta', type=float, default=0.5,
                                   metavar='FLOAT',
                                   help='beta 1 for Adam optimizer')
-    is_pan = True; im_size = 56
+    is_pan = False; im_size = 56
 
     args = parser.parse_args()
 
