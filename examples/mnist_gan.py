@@ -385,8 +385,6 @@ if __name__ == '__main__':
     optimizer_params.add_argument('--beta', type=float, default=0.5,
                                   metavar='FLOAT',
                                   help='beta 1 for Adam optimizer')
-    is_pan = False
-
     args = parser.parse_args()
 
     if args.plot:
@@ -403,8 +401,9 @@ if __name__ == '__main__':
                          'got %s.' % args.latent_type)
 
     # Gets training and testing data.
-    #(X_train, y_train), (_, _) = get_mnist_data(args.binarize, im_size=args.im_size)
-    (X_train, y_train), (_, _) = load_data(nb_images_per_label=10000, is_pan=is_pan, im_size=args.im_size)
+    is_pan = True
+    (X_train, y_train), (_, _) = get_mnist_data(args.binarize, im_size=args.im_size)
+    #(X_train, y_train), (_, _) = load_data(nb_images_per_label=10000, is_pan=is_pan, im_size=args.im_size)
 
     # Turns digit labels into one-hot encoded labels.
     y_train_ohe = keras.utils.np_utils.to_categorical(np.squeeze(y_train), 10)
