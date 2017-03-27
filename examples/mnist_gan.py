@@ -299,7 +299,7 @@ def get_mnist_data(binarize=False, im_size=28):
     return (X_train, y_train), (X_test, y_test)
 
 
-def train_model(args, X_train, y_train, y_train_ohe, is_pan=False, im_size=28):
+def train_model(args, X_train, y_train, is_pan=False, im_size=28):
     """This is the core part where the model is trained."""
 
     adam_optimizer = keras.optimizers.Adam(lr=args.lr, beta_1=args.beta)
@@ -322,14 +322,14 @@ def train_model(args, X_train, y_train, y_train_ohe, is_pan=False, im_size=28):
 
     loss = {'src': 'binary_crossentropy'}
     if supervised:
-        loss['class'] = 'categorical_crossentropy'
+        loss['class'] = 'sparse_categorical_crossentropy'
 
     model.compile(optimizer=adam_optimizer, loss=loss,
                   loss_weights=loss_weights)
 
     outputs = {'src': '1', 'src_fake': '0'}
     if supervised:
-        outputs['class'] = y_train_ohe
+        outputs['class'] = y_train
 
     inputs = [args.latent_type.lower()]
     inputs += ([] if args.unsupervised else [y_train])
@@ -405,10 +405,7 @@ if __name__ == '__main__':
     (X_train, y_train), (_, _) = get_mnist_data(args.binarize, im_size=args.im_size)
     #(X_train, y_train), (_, _) = load_data(nb_images_per_label=10000, is_pan=is_pan, im_size=args.im_size)
 
-    # Turns digit labels into one-hot encoded labels.
-    y_train_ohe = keras.utils.np_utils.to_categorical(np.squeeze(y_train), 10)
-
-    model = train_model(args, X_train, y_train, y_train_ohe, is_pan=is_pan, im_size=args.im_size)
+    model = train_model(args, X_train, y_train, is_pan=is_pan, im_size=args.im_size)
     #model = gandlf.models.load_model('/tmp/mnist_gan.keras_model')
 
     if args.plot:
