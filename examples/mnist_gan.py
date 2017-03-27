@@ -359,7 +359,7 @@ if __name__ == '__main__':
                                  help='if set, make mnist data binary')
 
     model_params = parser.add_argument_group('model params')
-    model_params.add_argument('--nb_latent', type=int, default=10,
+    model_params.add_argument('--nb_latent', type=int, default=100,
                               metavar='INT',
                               help='dimensions in the latent vector')
     model_params.add_argument('--save_path', type=str, metavar='STR',
