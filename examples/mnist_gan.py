@@ -407,7 +407,7 @@ if __name__ == '__main__':
     (X_train, y_train), (_, _) = load_data(nb_images_per_label=10000, is_pan=is_pan, im_size=args.im_size)
 
     # Turns digit labels into one-hot encoded labels.
-    y_train_ohe = np.eye(10)[np.squeeze(y_train)]
+    y_train_ohe = keras.utils.np_utils.to_categorical(np.squeeze(y_train), 10)
 
     model = train_model(args, X_train, y_train, y_train_ohe, is_pan=is_pan, im_size=args.im_size)
     #model = gandlf.models.load_model('/tmp/mnist_gan.keras_model')
